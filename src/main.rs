@@ -10,6 +10,45 @@ struct Request {
     version: String,
 }
 
+enum Status {
+    Ok,
+    NotFound,
+}
+
+impl Status {
+    fn code(&self) -> u16 {
+        match *self {
+            Status::Ok => 200,
+            Status::NotFound => 404,
+        }
+    }
+
+    fn name(&self) -> &'static str {
+        match *self {
+            Status::Ok => "OK",
+            Status::NotFound => "NotFound",
+        }
+    }
+}
+
+struct Response<'a> {
+    version: &'a str,
+    status: Status,
+}
+
+impl<'a> Response<'a> {
+    pub fn new(status: Status) -> Response<'a> {
+        Response {
+            version: "HTTP/1.1",
+            status,
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("{} {} {}\n", self.version, self.status.code(), self.status.name())
+    }
+}
+
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:8080")
         .expect("Couldn't bind to address");
@@ -20,13 +59,14 @@ fn main() {
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
         let req = parse_request(&stream);
-
         let path = cwd.join(req.path.trim_matches('/'));
-        if path.exists() {
-           stream.write(&format!("HTTP/1.1 200 OK\n").into_bytes()).unwrap();
+
+        let res = if path.exists() {
+            Response::new(Status::Ok)
         } else {
-           stream.write(&format!("HTTP/1.1 404 NotFound\n").into_bytes()).unwrap();
-        }
+            Response::new(Status::NotFound)
+        };
+        stream.write(&res.to_string().into_bytes()).unwrap();
     }
 }
 
