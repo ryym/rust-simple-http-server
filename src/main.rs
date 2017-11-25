@@ -1,6 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::prelude::*;
-use std::io::BufReader;
+use std::io::{BufReader, BufWriter};
+use std::fs::File;
 use std::env;
 
 #[derive(Debug)]
@@ -34,6 +35,7 @@ impl Status {
 struct Response<'a> {
     version: &'a str,
     status: Status,
+    body: Option<Box<Read>>,
 }
 
 impl<'a> Response<'a> {
@@ -41,11 +43,32 @@ impl<'a> Response<'a> {
         Response {
             version: "HTTP/1.1",
             status,
+            body: None,
         }
     }
 
-    pub fn to_string(&self) -> String {
-        format!("{} {} {}\n", self.version, self.status.code(), self.status.name())
+    pub fn set_body(&mut self, body: Box<Read>) {
+        self.body = Some(body);
+    }
+
+    // Maybe Response implements Read trait?
+    pub fn into_string(&mut self) -> String {
+        let sline = self.make_statusline();
+        match self.body.take() {
+            None => sline,
+            Some(mut body) => {
+                let mut buf = String::new();
+                body.read_to_string(&mut buf).unwrap();
+                sline + "\n" + &buf
+            }
+        }
+    }
+
+    fn make_statusline(&self) -> String {
+        format!("{} {} {}\n",
+                self.version,
+                self.status.code(),
+                self.status.name())
     }
 }
 
@@ -57,16 +80,21 @@ fn main() {
     let cwd = env::current_dir().unwrap();
 
     for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
+        let stream = stream.unwrap();
         let req = parse_request(&stream);
         let path = cwd.join(req.path.trim_matches('/'));
 
-        let res = if path.exists() {
-            Response::new(Status::Ok)
+        let mut res = if path.exists() {
+            let file = File::open(&path).unwrap();
+            let mut res = Response::new(Status::Ok);
+            res.set_body(Box::new(BufReader::new(file)));
+            res
         } else {
             Response::new(Status::NotFound)
         };
-        stream.write(&res.to_string().into_bytes()).unwrap();
+
+        let res = res.into_string().into_bytes();
+        BufWriter::new(stream).write(&res).unwrap();
     }
 }
 
