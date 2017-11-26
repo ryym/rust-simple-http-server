@@ -34,7 +34,7 @@ fn handle_request(stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
     let mut res = match path.canonicalize() {
         Err(_) => Response::new(Status::NotFound),
         Ok(path) => {
-            if !path.exists() || !is_allowed_path(&path, &cwd) {
+            if !is_allowed_path(&path, &cwd) {
                 Response::new(Status::NotFound)
             } else if path.is_dir() {
                 Response::new(Status::NotFound)
