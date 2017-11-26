@@ -1,5 +1,5 @@
 use std::io::prelude::*;
-use super::{Status};
+use super::{Status, AppResult};
 
 pub struct Response<'a> {
     version: &'a str,
@@ -21,16 +21,17 @@ impl<'a> Response<'a> {
     }
 
     // Maybe Response implements Read trait?
-    pub fn into_string(&mut self) -> String {
+    pub fn into_string(&mut self) -> AppResult<String> {
         let sline = self.make_statusline();
-        match self.body.take() {
+        let res = match self.body.take() {
             None => sline,
             Some(mut body) => {
                 let mut buf = String::new();
-                body.read_to_string(&mut buf).unwrap();
+                body.read_to_string(&mut buf)?;
                 sline + "\n" + &buf
             }
-        }
+        };
+        Ok(res)
     }
 
     fn make_statusline(&self) -> String {

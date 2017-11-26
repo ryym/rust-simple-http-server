@@ -1,5 +1,7 @@
 use std::io::prelude::*;
 use std::io::BufReader;
+use super::AppError;
+use super::AppResult;
 
 #[derive(Debug)]
 pub struct Request {
@@ -9,21 +11,21 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn from_stream(stream: &mut Read) -> Request {
+    pub fn from_stream(stream: &mut Read) -> AppResult<Request> {
         let mut reader = BufReader::new(stream);
         let mut buf = String::new();
-        reader.read_line(&mut buf).expect("Couldn't read_line");
+        reader.read_line(&mut buf)?;
 
         let parts: Vec<&str> = buf.split(" ").collect();
         if parts.len() != 3 {
-            panic!(format!("Invalid request header: {}", buf));
+            return Err(AppError::new(format!("Invalid request header: {}", buf)));
         }
 
-        Request {
-            method: String::from(parts[0]),
-            path: String::from(parts[1]),
-            version: String::from(parts[2]),
-        }
+        Ok(Request {
+            method: parts[0].to_string(),
+            path: parts[1].to_string(),
+            version: parts[2].to_string(),
+        })
     }
 
     pub fn path(&self) -> String {
