@@ -33,9 +33,9 @@ impl<'a> Response<'a> {
         self.body = Some(body);
     }
 
-    pub fn set_body_string(&mut self, body: String) {
+    pub fn set_body_string<S: Into<String>>(&mut self, body: S) {
         use std::io::Cursor;
-        let body = Cursor::new(body.into_bytes());
+        let body = Cursor::new(body.into().into_bytes());
         self.body = Some(Box::new(body));
     }
 

@@ -7,6 +7,7 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::env;
 use simple_http_server::{Status, Request, Response, AppResult, dir_html};
+use std::error::Error;
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:8080")
@@ -18,9 +19,18 @@ fn main() {
         let mut stream = stream.expect("Couldn't handle TCP stream");
         match handle_request(&mut stream, &cwd) {
             Ok(_) => {},
-            Err(err) => println!("[ERR]: {}", err)
+            Err(err) => {
+                let mut res = Response::new(Status::ServerErr);
+                let mes = format!("Internal Server Error: {}", err.description());
+                res.set_body_string(mes);
+                match res.into_string() {
+                    Ok(s) => BufWriter::new(&mut stream).write(&s.into_bytes())
+                        .expect("Couldn't respond server error..."),
+                    Err(err) => panic!("{}", err),
+                };
+            }
         }
-    }
+    };
 }
 
 fn handle_request(stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {

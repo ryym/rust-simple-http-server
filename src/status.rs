@@ -1,6 +1,7 @@
 pub enum Status {
     Ok,
     NotFound,
+    ServerErr,
 }
 
 impl Status {
@@ -8,6 +9,7 @@ impl Status {
         match *self {
             Status::Ok => 200,
             Status::NotFound => 404,
+            Status::ServerErr => 500,
         }
     }
 
@@ -15,6 +17,7 @@ impl Status {
         match *self {
             Status::Ok => "OK",
             Status::NotFound => "NotFound",
+            Status::ServerErr => "Internal Server Error",
         }
     }
 }
