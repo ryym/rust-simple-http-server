@@ -2,6 +2,7 @@ mod status;
 mod request;
 mod response;
 mod errors;
+pub mod dir_html;
 
 pub use self::status::Status;
 pub use self::request::Request;

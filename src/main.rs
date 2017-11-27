@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::fs::File;
 use std::path::PathBuf;
 use std::env;
-use simple_http_server::{Status, Request, Response, AppResult};
+use simple_http_server::{Status, Request, Response, AppResult, dir_html};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:8080")
@@ -37,7 +37,11 @@ fn handle_request(stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
             if !is_allowed_path(&path, &cwd) {
                 Response::new(Status::NotFound)
             } else if path.is_dir() {
-                Response::new(Status::NotFound)
+                let html = dir_html::generate(&path, &cwd)?;
+                let mut res = Response::new(Status::Ok);
+                res.set_body_string(html);
+                res.add_header("Content-Type", "text/html");
+                res
             } else {
                 let file = File::open(&path)?;
                 let mut res = Response::new(Status::Ok);

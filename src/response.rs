@@ -33,6 +33,12 @@ impl<'a> Response<'a> {
         self.body = Some(body);
     }
 
+    pub fn set_body_string(&mut self, body: String) {
+        use std::io::Cursor;
+        let body = Cursor::new(body.into_bytes());
+        self.body = Some(Box::new(body));
+    }
+
     pub fn add_header<K: Into<String>, V: Into<String>>(&mut self, key: K, value: V) {
         self.headers.insert(key.into(), value.into());
     }
