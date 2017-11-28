@@ -17,19 +17,13 @@ fn main() {
     let cwd = env::current_dir().expect("Couldn't read current directory");
     for stream in listener.incoming() {
         let mut stream = stream.expect("Couldn't handle TCP stream");
-        match handle_request(&mut stream, &cwd) {
-            Ok(_) => {},
-            Err(err) => {
-                let mut res = Response::new(Status::ServerErr);
-                let mes = format!("Internal Server Error: {}", err.description());
-                res.set_body_string(mes);
-                match res.into_string() {
-                    Ok(s) => BufWriter::new(&mut stream).write(&s.into_bytes())
-                        .expect("Couldn't respond server error..."),
-                    Err(err) => panic!("{}", err),
-                };
-            }
-        }
+        handle_request(&mut stream, &cwd).or_else(|err| -> AppResult<()> {
+            let mut res = Response::new(Status::ServerErr);
+            let mes = format!("Internal Server Error: {}", err.description());
+            res.set_body_string(mes);
+            BufWriter::new(&mut stream).write(&res.into_string()?.into_bytes())?;
+            Ok(())
+        }).expect("Couldn't respond server error...");
     };
 }
 
