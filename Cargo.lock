@@ -1,4 +1,4 @@
-[root]
+[[package]]
 name = "simple-http-server"
 version = "0.1.0"
 

@@ -1,14 +1,17 @@
 use std::fs;
 use std::path::Path;
-use super::{AppResult, AppError};
+use super::{AppError, AppResult};
 
 pub fn generate(dir: &Path, cwd: &Path) -> AppResult<String> {
-    let mut html = format!(r#"
+    let mut html = format!(
+        r#"
     <!DOCTYPE html>
     <html lang="en">
     <title>Files in {}</title>
     <head><body>
-    "#, &dir.to_string_lossy());
+    "#,
+        &dir.to_string_lossy()
+    );
 
     match dir.strip_prefix(cwd) {
         Err(_) => Err(AppError::new("Failed to strip dir path prefix")),

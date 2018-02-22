@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 use std::collections::HashMap;
-use super::{Status, AppResult};
+use super::{AppResult, Status};
 
 type Headers = HashMap<String, String>;
 
@@ -59,14 +59,17 @@ impl<'a> Response<'a> {
     }
 
     fn make_statusline(&self) -> String {
-        format!("{} {} {}",
-                self.version,
-                self.status.code(),
-                self.status.name())
+        format!(
+            "{} {} {}",
+            self.version,
+            self.status.code(),
+            self.status.name()
+        )
     }
 
     fn headers_to_string(&self) -> String {
-        self.headers.iter()
+        self.headers
+            .iter()
             .map(|(k, v)| make_header(&k, &v))
             .collect::<Vec<_>>()
             .join("\n")

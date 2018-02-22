@@ -20,7 +20,9 @@ impl fmt::Display for AppError {
 
 impl Error for AppError {
     fn description(&self) -> &str {
-        self.cause.as_ref().map_or_else(|| self.message.as_str(), |e| e.description())
+        self.cause
+            .as_ref()
+            .map_or_else(|| self.message.as_str(), |e| e.description())
     }
 
     fn cause(&self) -> Option<&Error> {

@@ -6,25 +6,26 @@ use std::io::{BufReader, BufWriter};
 use std::fs::File;
 use std::path::PathBuf;
 use std::env;
-use simple_http_server::{Status, Request, Response, AppResult, dir_html};
+use simple_http_server::{dir_html, AppResult, Request, Response, Status};
 use std::error::Error;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:8080")
-        .expect("Couldn't bind to address");
+    let listener = TcpListener::bind("127.0.0.1:8080").expect("Couldn't bind to address");
     println!("Server started on {}", "127.0.0.1:8080");
 
     let cwd = env::current_dir().expect("Couldn't read current directory");
     for stream in listener.incoming() {
         let mut stream = stream.expect("Couldn't handle TCP stream");
-        handle_request(&mut stream, &cwd).or_else(|err| -> AppResult<()> {
-            let mut res = Response::new(Status::ServerErr);
-            let mes = format!("Internal Server Error: {}", err.description());
-            res.set_body_string(mes);
-            BufWriter::new(&mut stream).write(&res.into_string()?.into_bytes())?;
-            Ok(())
-        }).expect("Couldn't respond server error...");
-    };
+        handle_request(&mut stream, &cwd)
+            .or_else(|err| -> AppResult<()> {
+                let mut res = Response::new(Status::ServerErr);
+                let mes = format!("Internal Server Error: {}", err.description());
+                res.set_body_string(mes);
+                BufWriter::new(&mut stream).write(&res.into_string()?.into_bytes())?;
+                Ok(())
+            })
+            .expect("Couldn't respond server error...");
+    }
 }
 
 fn handle_request(stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
