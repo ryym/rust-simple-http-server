@@ -11,7 +11,7 @@ pub struct Request {
 }
 
 impl Request {
-    pub fn from_stream(stream: &mut Read) -> AppResult<Request> {
+    pub fn from_stream<R: Read>(stream: R) -> AppResult<Request> {
         let mut reader = BufReader::new(stream);
         let mut buf = String::new();
         reader.read_line(&mut buf)?;

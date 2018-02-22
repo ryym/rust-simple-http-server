@@ -28,12 +28,8 @@ fn main() {
     }
 }
 
-fn handle_request(stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
-    // BufReader は Read 型の値を受け取る。
-    // TcpStream と &TcpStream の両方とも Read を実装しているので、
-    // BufReader には所有権を移す事も、貸すだけにする事もできる。
-    // stream は write 処理でも使うので、今回は貸すだけにする。
-    let req = Request::from_stream(stream)?;
+fn handle_request(mut stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
+    let req = Request::from_stream(&mut stream)?;
     let path = cwd.join(req.path().trim_matches('/'));
 
     let mut res = match path.canonicalize() {
