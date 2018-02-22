@@ -6,7 +6,7 @@ use std::io::{BufReader, BufWriter};
 use std::fs::File;
 use std::path::PathBuf;
 use std::env;
-use simple_http_server::{dir_html, AppResult, Request, Response, Status};
+use simple_http_server::{dir_html, headers, AppResult, Request, Response, Status};
 use std::error::Error;
 
 fn main() {
@@ -33,7 +33,11 @@ fn handle_request(mut stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
     let path = cwd.join(req.path().trim_matches('/'));
 
     let mut res = match path.canonicalize() {
-        Err(_) => Response::new(Status::NotFound),
+        Err(_) => {
+            let mut res = Response::new(Status::NotFound);
+            res.set_body_string("Not Found");
+            res
+        }
         Ok(path) => {
             if !is_allowed_path(&path, &cwd) {
                 Response::new(Status::NotFound)
@@ -45,8 +49,17 @@ fn handle_request(mut stream: &mut TcpStream, cwd: &PathBuf) -> AppResult<()> {
                 res
             } else {
                 let file = File::open(&path)?;
+
                 let mut res = Response::new(Status::Ok);
                 res.set_body(Box::new(BufReader::new(file)));
+
+                let content_type = path.extension()
+                    .and_then(|ext| ext.to_str())
+                    .and_then(headers::content_type);
+                if let Some(content_type) = content_type {
+                    res.add_header("Content-Type", content_type);
+                }
+
                 res
             }
         }
